@@ -3,7 +3,7 @@
   "displayName": "Unreal Engine Clangd Utils",
   "description": "Configures Unreal Engine C++ projects to work with clangd IntelliSense.",
   "version": "0.1.0",
-  "publisher": "antigravity",
+  "publisher": "sidunreal",
   "engines": {
     "vscode": "^1.80.0"
   },
