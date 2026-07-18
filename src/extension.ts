@@ -33,6 +33,14 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('unreal-utils.writeClangdConfig', () => writeClangdConfig(projectRoot))
     );
 
+    // Create Status Bar Item
+    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    statusBarItem.command = 'unreal-utils.generateCompileCommands';
+    statusBarItem.text = '$(database) Generate Clang Database';
+    statusBarItem.tooltip = 'Click to run Unreal Build Tool and update compile_commands.json';
+    statusBarItem.show();
+    context.subscriptions.push(statusBarItem);
+
     // Auto-run on startup if enabled
     const config = vscode.workspace.getConfiguration('unreal-utils');
     const autoRun = config.get<boolean>('autoRunOnStartup', true);

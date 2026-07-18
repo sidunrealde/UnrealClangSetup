@@ -2,7 +2,7 @@
   "name": "vscodeunrealutils",
   "displayName": "Unreal Engine Clangd Utils",
   "description": "Configures Unreal Engine C++ projects to work with clangd IntelliSense.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "sidunrealde",
   "repository": {
     "type": "git",
@@ -26,7 +26,8 @@
       },
       {
         "command": "unreal-utils.generateCompileCommands",
-        "title": "Unreal Utils: Generate Clang Database"
+        "title": "Unreal Utils: Generate Clang Database",
+        "icon": "$(database)"
       },
       {
         "command": "unreal-utils.writeClangdConfig",
@@ -79,6 +80,15 @@
           "description": "Add -NoExecCodeGenActions to the UBT command to speed up database generation (recommended for UE 5.3+)."
         }
       }
+    },
+    "menus": {
+      "editor/title": [
+        {
+          "command": "unreal-utils.generateCompileCommands",
+          "when": "resourceLangId == cpp || resourceLangId == c || resourceExtname == .uproject",
+          "group": "navigation"
+        }
+      ]
     }
   },
   "scripts": {
