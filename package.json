@@ -1,0 +1,92 @@
+{
+  "name": "vscodeunrealutils",
+  "displayName": "Unreal Engine Clangd Utils",
+  "description": "Configures Unreal Engine C++ projects to work with clangd IntelliSense.",
+  "version": "0.1.0",
+  "publisher": "antigravity",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/*.uproject"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "unreal-utils.setupProject",
+        "title": "Unreal Utils: Setup Project for Clangd"
+      },
+      {
+        "command": "unreal-utils.generateCompileCommands",
+        "title": "Unreal Utils: Generate Clang Database"
+      },
+      {
+        "command": "unreal-utils.writeClangdConfig",
+        "title": "Unreal Utils: Write .clangd Config File"
+      }
+    ],
+    "configuration": {
+      "title": "Unreal Engine Clangd Utils",
+      "properties": {
+        "unreal-utils.unrealBuildToolPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to UnrealBuildTool executable (e.g. UnrealBuildTool.exe on Windows, or Build.bat). If empty, the extension will attempt to auto-resolve it from tasks.json or the registry."
+        },
+        "unreal-utils.targetName": {
+          "type": "string",
+          "default": "",
+          "description": "Target Name for compilation database (e.g., MyGameEditor). If empty, auto-detects from the uproject name."
+        },
+        "unreal-utils.buildConfiguration": {
+          "type": "string",
+          "default": "Development",
+          "enum": [
+            "Debug",
+            "DebugGame",
+            "Development",
+            "Shipping",
+            "Test"
+          ],
+          "description": "Build configuration to use when generating the compilation database."
+        },
+        "unreal-utils.buildPlatform": {
+          "type": "string",
+          "default": "Win64",
+          "enum": [
+            "Win64",
+            "Mac",
+            "Linux"
+          ],
+          "description": "Target platform to use when generating the compilation database."
+        },
+        "unreal-utils.autoRunOnStartup": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically run setup on startup if compile_commands.json or .clangd is missing in an Unreal project."
+        },
+        "unreal-utils.useNoExecCodeGenActions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Add -NoExecCodeGenActions to the UBT command to speed up database generation (recommended for UE 5.3+)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "node esbuild.js --minify",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.80.0",
+    "esbuild": "^0.19.0",
+    "typescript": "^5.0.0"
+  }
+}
