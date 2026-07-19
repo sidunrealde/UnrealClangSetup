@@ -2,12 +2,13 @@
   "name": "vscodeunrealutils",
   "displayName": "Unreal Engine Clangd Utils",
   "description": "Configures Unreal Engine C++ projects to work with clangd IntelliSense.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "sidunrealde",
   "repository": {
     "type": "git",
     "url": "https://github.com/sidunrealde/UnrealClangSetup.git"
   },
+  "icon": "resources/icon.png",
   "engines": {
     "vscode": "^1.80.0"
   },
