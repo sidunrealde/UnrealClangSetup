@@ -79,6 +79,21 @@
           "type": "boolean",
           "default": true,
           "description": "Add -NoExecCodeGenActions to the UBT command to speed up database generation (recommended for UE 5.3+)."
+        },
+        "unreal-utils.compiler": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "Clang",
+            "VisualStudio"
+          ],
+          "enumDescriptions": [
+            "Use UnrealBuildTool's default (Clang on UE 5.x). If Clang is not installed, retry with the Visual Studio toolchain.",
+            "Always use Clang. Requires a Clang version supported by your engine.",
+            "Always use the Visual Studio (MSVC) toolchain."
+          ],
+          "description": "Toolchain UnrealBuildTool uses when generating the compilation database."
         }
       }
     },

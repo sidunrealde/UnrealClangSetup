@@ -27,7 +27,9 @@ Before using this extension, please ensure your system meets the following requi
 - **Automated Clangd Setup**: Automatically creates a custom project-specific `.clangd` file with optimized compiler arguments, disabled template parsing warnings, and specific diagnostic suppressions for Unreal Engine's macro systems (`UCLASS`, `GENERATED_BODY`, etc.).
 - **Automatic Compile Commands Generation**: Locates the `UnrealBuildTool` executable and runs it with `-mode=GenerateClangDatabase` to build `compile_commands.json`.
 - **Installed Engine Detection**: Finds every installed Unreal Engine version, wherever it is installed, from the Windows registry (Launcher installs and registered source builds) and the Epic Games Launcher install list. It uses the engine matching your project's `EngineAssociation`, or the newest installed engine (with a warning) if that version isn't installed.
-- **Database Relocation**: Automatically moves/copies the generated `compile_commands.json` database from the Engine root folder to your project root where the `clangd` language server can find it.
+- **Database in the Project Root**: `compile_commands.json` ends up in your project root, where the `clangd` language server finds it. Newer engines write it there directly; with older engines it is copied from the Engine root folder.
+- **Toolchain Fallback**: UE 5.x generates the database with Clang by default. If Clang isn't installed, the extension automatically uses the Visual Studio toolchain instead (configurable with `unreal-utils.compiler`).
+- **Full Build Output**: UnrealBuildTool's output appears in the **Unreal Clangd Utils** output panel, and error messages show the reason for a failure.
 - **Conflict Prevention**: Disables Microsoft C/C++ extension's IntelliSense workspace engine (`C_Cpp.intelliSenseEngine = disabled`) to prevent duplicate diagnostics, lag, and resource conflicts.
 - **One-Click UI Controls**:
   - **Status Bar Button**: Displays a `Generate Clang Database` shortcut button at the bottom of the window.
@@ -65,6 +67,13 @@ Before using this extension, please ensure your system meets the following requi
 * **Cause**: The engine version in your `.uproject` (`EngineAssociation`) isn't installed, so the newest installed engine was used instead.
 * **Solution**: Install the matching engine version, switch the project's engine version (right-click the `.uproject` -> **Switch Unreal Engine version...**), or set `Unreal Build Tool Path` in settings to pick a specific engine.
 
+### Issue: "Clang x64 must be installed in order to build this target"
+* **Cause**: UE 5.x generates the clang database with the Clang toolchain by default, and no supported Clang version is installed (UE 5.8 needs 18.1.8 or newer).
+* **Solution**: With the default `unreal-utils.compiler` setting (`auto`), the extension retries with the Visual Studio toolchain automatically, and clangd works with either. To use Clang, install **C++ Clang Compiler for Windows** from the Visual Studio Installer, or a supported LLVM release, and set `unreal-utils.compiler` to `Clang`.
+
+### Issue: Generation failed and the reason isn't clear
+* **Solution**: Click **Show Output** in the error message, or open the **Unreal Clangd Utils** output panel (`View -> Output`), to see UnrealBuildTool's full output.
+
 ### Issue: Duplicate Diagnostics or Slow Editing Performance
 * **Cause**: Microsoft's C/C++ extension IntelliSense is still running.
 * **Solution**: Ensure your workspace settings file (`.vscode/settings.json`) contains `"C_Cpp.intelliSenseEngine": "disabled"`. This extension attempts to set this automatically during initial setup.
@@ -81,6 +90,7 @@ This extension contributes the following settings:
 * `unreal-utils.buildPlatform`: The target platform (defaults to `Win64`).
 * `unreal-utils.autoRunOnStartup`: Toggles whether the extension prompts you to run setup if configurations are missing on startup (default: `true`).
 * `unreal-utils.useNoExecCodeGenActions`: Appends the `-NoExecCodeGenActions` flag to the UBT command to significantly speed up database generation (default: `true`).
+* `unreal-utils.compiler`: Toolchain for generating the database: `auto` (default; UBT's default, falling back to Visual Studio if Clang isn't installed), `Clang`, or `VisualStudio`.
 
 ---
 
