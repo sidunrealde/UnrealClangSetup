@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as cp from 'child_process';
+import { findInstalledEngines, formatEngineVersion, getUbtPath, matchesAssociation } from './engineDiscovery';
 
 /**
  * Executes a command and returns the stdout.
@@ -99,92 +100,6 @@ export function findEngineRoot(ubtPath: string): string | undefined {
 }
 
 /**
- * Query registry to find UBT from EngineAssociation.
- */
-async function findUBTFromRegistry(engineAssociation: string): Promise<string | undefined> {
-    if (process.platform !== 'win32') {
-        return undefined;
-    }
-
-    try {
-        // 1. Try Custom builds registry (HKCU\Software\Epic Games\Unreal Engine\Builds)
-        const hkcuOutput = await execAsync('reg query "HKCU\\Software\\Epic Games\\Unreal Engine\\Builds"');
-        const lines = hkcuOutput.stdout.split('\r\n');
-        for (const line of lines) {
-            const trimmed = line.trim();
-            if (trimmed.includes(engineAssociation)) {
-                // Line format typically is: EngineAssociation REG_SZ EnginePath
-                const match = trimmed.match(new RegExp(`${engineAssociation}\\s+REG_SZ\\s+(.+)`, 'i'));
-                if (match && match[1]) {
-                    const enginePath = match[1].trim();
-                    const ubtPath = path.join(enginePath, 'Engine', 'Binaries', 'DotNET', 'UnrealBuildTool', 'UnrealBuildTool.exe');
-                    if (fs.existsSync(ubtPath)) {
-                        return ubtPath;
-                    }
-                }
-            }
-        }
-
-        // 2. Try Launcher builds registry (HKLM\SOFTWARE\EpicGames\Unreal Engine)
-        const hklmKey = `HKLM\\SOFTWARE\\EpicGames\\Unreal Engine\\${engineAssociation}`;
-        const hklmOutput = await execAsync(`reg query "${hklmKey}" /v InstalledDirectory`);
-        const hklmLines = hklmOutput.stdout.split('\r\n');
-        for (const line of hklmLines) {
-            const trimmed = line.trim();
-            if (trimmed.includes('InstalledDirectory')) {
-                const match = trimmed.match(/InstalledDirectory\s+REG_SZ\s+(.+)/i);
-                if (match && match[1]) {
-                    const enginePath = match[1].trim();
-                    const ubtPath = path.join(enginePath, 'Engine', 'Binaries', 'DotNET', 'UnrealBuildTool', 'UnrealBuildTool.exe');
-                    if (fs.existsSync(ubtPath)) {
-                        return ubtPath;
-                    }
-                }
-            }
-        }
-    } catch (e) {
-        console.error('Error querying registry:', e);
-    }
-    return undefined;
-}
-
-/**
- * Scans standard paths for Unreal Engine installations and finds UBT.
- */
-function findUBTInStandardPaths(): string | undefined {
-    const drives = ['C:', 'D:', 'E:', 'F:'];
-    const subPaths = [
-        'Program Files/Epic Games',
-        'Program Files (x86)/Epic Games',
-        'Epic Games'
-    ];
-
-    for (const drive of drives) {
-        for (const subPath of subPaths) {
-            const parentDir = path.join(drive, subPath);
-            if (fs.existsSync(parentDir)) {
-                try {
-                    const folders = fs.readdirSync(parentDir);
-                    // Match UE_5.x etc.
-                    const ueFolders = folders.filter(f => f.startsWith('UE_'));
-                    // Sort descending (e.g. UE_5.8 before UE_5.7)
-                    ueFolders.sort((a, b) => b.localeCompare(a));
-                    for (const folder of ueFolders) {
-                        const ubtPath = path.join(parentDir, folder, 'Engine', 'Binaries', 'DotNET', 'UnrealBuildTool', 'UnrealBuildTool.exe');
-                        if (fs.existsSync(ubtPath)) {
-                            return ubtPath;
-                        }
-                    }
-                } catch (e) {
-                    // Ignore read error
-                }
-            }
-        }
-    }
-    return undefined;
-}
-
-/**
  * Searches .vscode/tasks.json for Unreal Build commands.
  */
 async function findUBTFromTasksJson(projectRoot: string): Promise<string | undefined> {
@@ -243,31 +158,40 @@ export async function resolveUnrealBuildToolPath(projectRoot: string, uprojectPa
     }
 
     // 3. Resolve using uproject EngineAssociation
+    let association = '';
     try {
-        const uprojectContent = await fs.promises.readFile(uprojectPath, 'utf8');
-        const uprojectJson = JSON.parse(uprojectContent);
-        const association = uprojectJson.EngineAssociation;
-        if (association) {
-            // If it's an absolute path already
-            if (path.isAbsolute(association) && fs.existsSync(association)) {
-                const ubtPath = path.join(association, 'Engine', 'Binaries', 'DotNET', 'UnrealBuildTool', 'UnrealBuildTool.exe');
-                if (fs.existsSync(ubtPath)) {
-                    return ubtPath;
-                }
-            }
-            const regPath = await findUBTFromRegistry(String(association));
-            if (regPath) {
-                return regPath;
-            }
+        const uprojectJson = JSON.parse(await fs.promises.readFile(uprojectPath, 'utf8'));
+        if (typeof uprojectJson.EngineAssociation === 'string') {
+            association = uprojectJson.EngineAssociation.trim();
         }
     } catch (e) {
-        console.error('Error resolving via uproject association:', e);
+        console.error('Error reading EngineAssociation from uproject:', e);
     }
 
-    // 4. Try standard installation folders
-    const standardPath = findUBTInStandardPaths();
-    if (standardPath) {
-        return standardPath;
+    // If it's an absolute path already
+    if (association && path.isAbsolute(association)) {
+        const ubtPath = getUbtPath(association);
+        if (ubtPath) {
+            return ubtPath;
+        }
+    }
+
+    // Match against engines installed via the Epic Launcher or registered source builds
+    const engines = await findInstalledEngines();
+    const matched = association ? engines.find(e => matchesAssociation(e, association)) : undefined;
+    if (matched) {
+        return matched.ubtPath;
+    }
+
+    // 4. Fall back to the newest installed engine
+    const newest = engines[0];
+    if (newest) {
+        if (association) {
+            vscode.window.showWarningMessage(
+                `Project targets Unreal Engine ${association}, which isn't installed. Using UE ${formatEngineVersion(newest)} at ${newest.root}.`
+            );
+        }
+        return newest.ubtPath;
     }
 
     return undefined;

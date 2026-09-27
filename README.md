@@ -25,7 +25,8 @@ Before using this extension, please ensure your system meets the following requi
 ## Key Features
 
 - **Automated Clangd Setup**: Automatically creates a custom project-specific `.clangd` file with optimized compiler arguments, disabled template parsing warnings, and specific diagnostic suppressions for Unreal Engine's macro systems (`UCLASS`, `GENERATED_BODY`, etc.).
-- **Automatic Compile Commands Generation**: Locates the `UnrealBuildTool` executable (by scanning tasks, the registry, or standard installation paths) and runs it with `-mode=GenerateClangDatabase` to build `compile_commands.json`.
+- **Automatic Compile Commands Generation**: Locates the `UnrealBuildTool` executable and runs it with `-mode=GenerateClangDatabase` to build `compile_commands.json`.
+- **Installed Engine Detection**: Finds every installed Unreal Engine version, wherever it is installed, from the Windows registry (Launcher installs and registered source builds) and the Epic Games Launcher install list. It uses the engine matching your project's `EngineAssociation`, or the newest installed engine (with a warning) if that version isn't installed.
 - **Database Relocation**: Automatically moves/copies the generated `compile_commands.json` database from the Engine root folder to your project root where the `clangd` language server can find it.
 - **Conflict Prevention**: Disables Microsoft C/C++ extension's IntelliSense workspace engine (`C_Cpp.intelliSenseEngine = disabled`) to prevent duplicate diagnostics, lag, and resource conflicts.
 - **One-Click UI Controls**:
@@ -54,10 +55,15 @@ Before using this extension, please ensure your system meets the following requi
 * **Solution**: Build your project inside Unreal Editor (e.g. click "Live Coding" or Compile) or run a standard build task in VS Code. Once built, restart the `clangd` server via the Command Palette (`clangd: Restart language server`).
 
 ### Issue: Extension says "Could not locate UnrealBuildTool"
-* **Cause**: Your project doesn't have generated VS Code workspace files, or the Engine is in a non-standard location not indexed by the registry.
+* **Cause**: No installed engine was found in `.vscode/tasks.json`, the Windows registry, or the Epic Games Launcher install list (for example, a source build that was never registered with UnrealVersionSelector).
 * **Solution**: 
   1. Open Unreal Editor and select **Tools -> Generate Visual Studio Code Project**.
-  2. Open VS Code Settings (`Ctrl+,`), search for `Unreal Build Tool Path`, and manually paste the absolute path to your `UnrealBuildTool.exe`.
+  2. For source builds, register the engine: right-click your `.uproject` -> **Switch Unreal Engine version...** and browse to the engine folder.
+  3. Open VS Code Settings (`Ctrl+,`), search for `Unreal Build Tool Path`, and manually paste the absolute path to your `UnrealBuildTool.exe`.
+
+### Issue: Warning "Project targets Unreal Engine X, which isn't installed"
+* **Cause**: The engine version in your `.uproject` (`EngineAssociation`) isn't installed, so the newest installed engine was used instead.
+* **Solution**: Install the matching engine version, switch the project's engine version (right-click the `.uproject` -> **Switch Unreal Engine version...**), or set `Unreal Build Tool Path` in settings to pick a specific engine.
 
 ### Issue: Duplicate Diagnostics or Slow Editing Performance
 * **Cause**: Microsoft's C/C++ extension IntelliSense is still running.
@@ -69,12 +75,18 @@ Before using this extension, please ensure your system meets the following requi
 
 This extension contributes the following settings:
 
-* `unreal-utils.unrealBuildToolPath`: Custom path to the `UnrealBuildTool` executable. If empty, the extension will auto-resolve it from `.vscode/tasks.json` or registry entries.
+* `unreal-utils.unrealBuildToolPath`: Custom path to the `UnrealBuildTool` executable. If empty, the extension will auto-resolve it from `.vscode/tasks.json`, the Windows registry, or the Epic Games Launcher install list.
 * `unreal-utils.targetName`: Custom project target name (e.g. `MyGameEditor`). If left empty, it auto-detects based on the `.Target.cs` files in your `Source/` folder.
 * `unreal-utils.buildConfiguration`: The build configuration to use when generating compile commands (defaults to `Development`).
 * `unreal-utils.buildPlatform`: The target platform (defaults to `Win64`).
 * `unreal-utils.autoRunOnStartup`: Toggles whether the extension prompts you to run setup if configurations are missing on startup (default: `true`).
 * `unreal-utils.useNoExecCodeGenActions`: Appends the `-NoExecCodeGenActions` flag to the UBT command to significantly speed up database generation (default: `true`).
+
+---
+
+## Release Notes
+
+See [CHANGELOG.md](CHANGELOG.md) for the release history.
 
 ---
 
