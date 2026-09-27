@@ -2,7 +2,7 @@
   "name": "vscodeunrealutils",
   "displayName": "Unreal Engine Clangd Utils",
   "description": "Configures Unreal Engine C++ projects to work with clangd IntelliSense.",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "publisher": "sidunrealde",
   "repository": {
     "type": "git",
@@ -41,7 +41,7 @@
         "unreal-utils.unrealBuildToolPath": {
           "type": "string",
           "default": "",
-          "description": "Path to UnrealBuildTool executable (e.g. UnrealBuildTool.exe on Windows, or Build.bat). If empty, the extension will attempt to auto-resolve it from tasks.json or the registry."
+          "description": "Path to UnrealBuildTool executable (e.g. UnrealBuildTool.exe on Windows, or Build.bat). If empty, the extension will attempt to auto-resolve it from tasks.json, the Windows registry, or the Epic Games Launcher install list, matching the project's EngineAssociation (or the newest installed engine if that version isn't installed)."
         },
         "unreal-utils.targetName": {
           "type": "string",
