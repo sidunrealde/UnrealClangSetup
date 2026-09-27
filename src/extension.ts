@@ -7,9 +7,9 @@ import {
     resolveUnrealBuildToolPath,
     findEditorTarget,
     findEngineRoot,
-    disableMsIntelliSense,
-    execAsync
+    disableMsIntelliSense
 } from './utils';
+import { CompilerChoice, generateClangDatabase, summarizeFailure, supportsOutputDir } from './ubt';
 
 export async function activate(context: vscode.ExtensionContext) {
     const folders = vscode.workspace.workspaceFolders;
@@ -112,48 +112,66 @@ async function generateCompileCommandsCommand(projectRoot: string, uprojectPath:
     }, async (progress) => {
         progress.report({ message: "Running UnrealBuildTool..." });
 
-        const ubtArgs = [
-            '-mode=GenerateClangDatabase',
-            `-project="${uprojectPath}"`,
-            targetName,
-            platform,
-            buildConfig
-        ];
+        // Newer engines can write the database straight into the project instead of the engine folder
+        const engineRoot = findEngineRoot(ubtPath);
+        const outputDir = engineRoot && supportsOutputDir(engineRoot) ? projectRoot : undefined;
+        const output = getOutputChannel();
+        output.appendLine(`[${new Date().toLocaleTimeString()}] Generating clang database for ${projectName}`);
 
-        if (useNoExec) {
-            ubtArgs.push('-NoExecCodeGenActions');
+        let result;
+        try {
+            result = await generateClangDatabase({
+                ubtPath,
+                uprojectPath,
+                target: targetName,
+                platform,
+                configuration: buildConfig,
+                noExecCodeGenActions: useNoExec,
+                compiler: config.get<CompilerChoice>('compiler', 'auto'),
+                outputDir,
+                cwd: projectRoot,
+                log: text => output.append(text),
+            });
+        } catch (error: any) {
+            showFailure(`Could not start UnrealBuildTool: ${error.message || error}`);
+            return;
         }
 
-        // Put double quotes around UBT path in case of spaces
-        const cmd = `"${ubtPath}" ${ubtArgs.join(' ')}`;
+        if (!result.success) {
+            const reason = summarizeFailure(result.output);
+            showFailure(`Failed to generate clang database (UnrealBuildTool exit code ${result.exitCode})${reason ? `: ${reason}` : '.'}`);
+            return;
+        }
 
-        try {
-            console.log(`Executing UBT: ${cmd}`);
-            await execAsync(cmd, { cwd: projectRoot });
-
+        const toolchainNote = result.usedMsvcFallback
+            ? ' Clang is not installed, so the Visual Studio toolchain was used (see the unreal-utils.compiler setting).'
+            : '';
+        const localCC = path.join(projectRoot, 'compile_commands.json');
+        let ready = !!outputDir && fs.existsSync(localCC);
+        if (!ready && engineRoot) {
             progress.report({ message: "Relocating compile_commands.json..." });
+            ready = await copyCompileCommands(engineRoot, projectRoot);
+        }
+        if (ready || fs.existsSync(localCC)) {
+            vscode.window.showInformationMessage(`Generated compile_commands.json at the project root.${toolchainNote}`);
+        } else {
+            vscode.window.showWarningMessage('UBT run completed, but compile_commands.json could not be automatically relocated. Please locate it in the Engine directory and copy it to your project root.');
+        }
+    });
+}
 
-            const engineRoot = findEngineRoot(ubtPath);
-            let relocated = false;
+let outputChannel: vscode.OutputChannel | undefined;
 
-            if (engineRoot) {
-                relocated = await copyCompileCommands(engineRoot, projectRoot);
-            }
+function getOutputChannel(): vscode.OutputChannel {
+    outputChannel ??= vscode.window.createOutputChannel('Unreal Clangd Utils');
+    return outputChannel;
+}
 
-            if (relocated) {
-                vscode.window.showInformationMessage('Successfully generated and set up compile_commands.json at project root!');
-            } else {
-                // If it wasn't in standard directories, search project root first to see if UBT generated it there directly
-                const localCC = path.join(projectRoot, 'compile_commands.json');
-                if (fs.existsSync(localCC)) {
-                    vscode.window.showInformationMessage('Successfully generated compile_commands.json (already in project root)!');
-                } else {
-                    vscode.window.showWarningMessage('UBT run completed, but compile_commands.json could not be automatically relocated. Please locate it in the Engine directory and copy it to your project root.');
-                }
-            }
-
-        } catch (error: any) {
-            vscode.window.showErrorMessage(`Failed to generate clang database: ${error.message || error}`);
+function showFailure(message: string) {
+    const showOutput = 'Show Output';
+    vscode.window.showErrorMessage(message, showOutput).then(selection => {
+        if (selection === showOutput) {
+            getOutputChannel().show();
         }
     });
 }
@@ -184,4 +202,6 @@ async function copyCompileCommands(engineRoot: string, projectRoot: string): Pro
     return false;
 }
 
-export function deactivate() {}
+export function deactivate() {
+    outputChannel?.dispose();
+}

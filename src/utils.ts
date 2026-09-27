@@ -1,23 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as cp from 'child_process';
 import { findInstalledEngines, formatEngineVersion, getUbtPath, matchesAssociation } from './engineDiscovery';
-
-/**
- * Executes a command and returns the stdout.
- */
-export function execAsync(cmd: string, options?: cp.ExecOptions): Promise<{ stdout: string; stderr: string }> {
-    return new Promise((resolve, reject) => {
-        cp.exec(cmd, options || {}, (error, stdout, stderr) => {
-            if (error) {
-                reject(error);
-            } else {
-                resolve({ stdout, stderr });
-            }
-        });
-    });
-}
 
 /**
  * Finds a .uproject file in the workspace root or one level deep.
