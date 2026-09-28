@@ -13,16 +13,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v7
         with:
-          node-dir: '18.x'
-          cache: 'npm'
+          node-version: '24.x'
 
       - name: Install Dependencies
         run: npm ci
 
+      # Every push to main runs this workflow, but the Marketplace rejects a version that
+      # already exists. Skip publishing (instead of failing) until package.json is bumped.
+      - name: Check Marketplace Version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          EXTENSION=$(node -p "const p = require('./package.json'); p.publisher + '.' + p.name")
+          if npx --yes @vscode/vsce show "$EXTENSION" --json \
+            | node -e "const d = JSON.parse(require('fs').readFileSync(0, 'utf8')); process.exit(d.versions.some(v => v.version === process.argv[1]) ? 0 : 1)" "$VERSION"; then
+            echo "::notice::$EXTENSION v$VERSION is already published; skipping. Bump the version in package.json to release."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Package & Publish
-        run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }}
+        if: steps.version.outputs.publish == 'true'
+        run: npx --yes @vscode/vsce publish -p ${{ secrets.VSCE_PAT }}
