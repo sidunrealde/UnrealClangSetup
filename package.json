@@ -2,7 +2,7 @@
   "name": "vscodeunrealutils",
   "displayName": "Unreal Engine Clangd Utils",
   "description": "Configures Unreal Engine C++ projects to work with clangd IntelliSense.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "sidunrealde",
   "repository": {
     "type": "git",

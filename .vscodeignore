@@ -5,3 +5,5 @@ tsconfig.json
 esbuild.js
 package-lock.json
 vscodeunrealutils-*.vsix
+.gitignore
+**/*.map
