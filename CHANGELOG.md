@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-28
+
+### Changed
+- Release pipeline: GitHub Actions updated to Node 24 (`actions/checkout` and `actions/setup-node` v7), and runs skip publishing when the version is already on the Marketplace. No functional changes to the extension.
+
 ## [0.2.1] - 2026-09-28
 
 ### Added
