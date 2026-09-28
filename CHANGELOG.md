@@ -6,26 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-09-28
+## [0.2.1] - 2026-09-28
+
+### Added
+- `unreal-utils.compiler` setting (`auto`, `Clang`, `VisualStudio`). In `auto`, if UE 5.x's default Clang toolchain isn't installed, the database is generated with the Visual Studio toolchain instead.
+- "Unreal Clangd Utils" output panel that shows UnrealBuildTool's full output. Error messages now include the reason and a **Show Output** button.
+
+### Changed
+- On engines that support it, UnrealBuildTool writes `compile_commands.json` directly to the project root (`-OutputDir`) instead of the engine folder. Older engines still copy it from the engine folder.
+- UnrealBuildTool is started without a shell, so paths with spaces or special characters no longer need quoting.
+- The `.gitignore` file is no longer included in the published package.
+
+### Fixed
+- Generation failed on machines without Clang ("Clang x64 must be installed in order to build this target"), and the error only said "Command failed".
+- An intermittent Unreal Header Tool crash during generation is now retried once automatically.
+
+## [0.2.0] - 2026-09-27
 
 ### Added
 - Detection of installed Unreal Engine versions, wherever they are installed, from the Windows registry (Epic Launcher installs and registered source builds) and the Epic Games Launcher install list (`LauncherInstalled.dat`).
 - The engine matching the project's `EngineAssociation` is used for UnrealBuildTool. If that version isn't installed, the newest installed engine is used and a warning is shown.
 - Support for the UE4 UnrealBuildTool location (`Engine/Binaries/DotNET/UnrealBuildTool.exe`).
-- `unreal-utils.compiler` setting (`auto`, `Clang`, `VisualStudio`). In `auto`, if UE 5.x's default Clang toolchain isn't installed, the database is generated with the Visual Studio toolchain instead.
-- "Unreal Clangd Utils" output panel that shows UnrealBuildTool's full output. Error messages now include the reason and a **Show Output** button.
 - This changelog.
-
-### Changed
-- On engines that support it, UnrealBuildTool writes `compile_commands.json` directly to the project root (`-OutputDir`) instead of the engine folder. Older engines still copy it from the engine folder.
-- UnrealBuildTool is started without a shell, so paths with spaces or special characters no longer need quoting.
 
 ### Fixed
 - Registry lookup failed entirely when the source-build registry key (`HKCU\Software\Epic Games\Unreal Engine\Builds`) didn't exist, so Launcher installs were never checked.
 - Stale registry entries for uninstalled engines are now ignored.
 - Source-build GUIDs are no longer used as regular expressions when parsing registry output.
-- Generation failed on machines without Clang ("Clang x64 must be installed in order to build this target"), and the error only said "Command failed".
-- An intermittent Unreal Header Tool crash during generation is now retried once automatically.
 
 ### Removed
 - Hardcoded scan of `C:`–`F:` drives for `Program Files/Epic Games` folders.
