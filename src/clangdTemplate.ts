@@ -1,5 +1,8 @@
 export const CLANGD_TEMPLATE = `CompileFlags:
-  Remove: [-m64, --target=*, -gcodeview, /guard:cf, /utf-8, -Wno-deprecated-builtins, -Wall]
+  # UE's Clang compile commands set -resource-dir to the compiler's own builtin headers (e.g. Visual Studio's
+  # Clang 19). Removing it lets clangd use the headers that match its own version; a mismatch causes errors
+  # such as "definition of builtin function '_m_prefetch'".
+  Remove: [-m64, --target=*, -gcodeview, /guard:cf, /utf-8, -Wno-deprecated-builtins, -Wall, -resource-dir=*]
   Add:
     - -std=c++20                           
     - -fno-delayed-template-parsing       # Safely accepted by clang-cl to enforce strict standard compliance

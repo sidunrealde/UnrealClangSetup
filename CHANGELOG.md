@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-10-14
+
+### Fixed
+- False clangd errors such as "definition of builtin function '_m_prefetch'" when the project is built with Clang. UE's Clang compile commands set `-resource-dir` to the compiler's builtin headers (e.g. Visual Studio's Clang 19), which don't match a newer clangd. The `.clangd` template now removes `-resource-dir`, so clangd uses its own headers. Existing projects: run **Unreal Utils: Write .clangd Config File** to update `.clangd`.
+
 ## [0.2.2] - 2026-09-28
 
 ### Changed

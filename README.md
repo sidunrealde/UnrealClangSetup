@@ -74,6 +74,10 @@ Before using this extension, please ensure your system meets the following requi
 ### Issue: Generation failed and the reason isn't clear
 * **Solution**: Click **Show Output** in the error message, or open the **Unreal Clangd Utils** output panel (`View -> Output`), to see UnrealBuildTool's full output.
 
+### Issue: clangd errors like "definition of builtin function '_m_prefetch'" but the project compiles
+* **Cause**: When the project is built with Clang, Unreal's compile commands point clangd at the compiler's own builtin headers (`-resource-dir`, e.g. Visual Studio's Clang 19). A newer clangd doesn't match those headers.
+* **Solution**: Run **Unreal Utils: Write .clangd Config File** (this overwrites `.clangd`), or add `-resource-dir=*` to the `CompileFlags: Remove:` list in your `.clangd`. Then run **clangd: Restart language server**.
+
 ### Issue: Duplicate Diagnostics or Slow Editing Performance
 * **Cause**: Microsoft's C/C++ extension IntelliSense is still running.
 * **Solution**: Ensure your workspace settings file (`.vscode/settings.json`) contains `"C_Cpp.intelliSenseEngine": "disabled"`. This extension attempts to set this automatically during initial setup.
