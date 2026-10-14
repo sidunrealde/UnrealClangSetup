@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-10-14
+
+Existing projects keep their old `.clangd`: run **Unreal Utils: Write .clangd Config File** to get the template fixes below (this overwrites `.clangd`).
+
+### Added
+- Lint checks based on the [Epic C++ Coding Standard](https://dev.epicgames.com/documentation/unreal-engine/epic-cplusplus-coding-standard-for-unreal-engine) in the `.clangd` template: PascalCase naming with `E` enum prefixes and `b` booleans, braces around single statements, `nullptr`, const correctness (locals, methods, parameters passed by const reference, range-for loops), no `const` by-value returns, qualified `auto`, one declaration per statement, `default` in every `switch`, `enum class`, sized integer types, no global `using` in headers, C++ casts, `override` on overrides, and no shadowed variables. Tuned so Unreal's own macros (`GENERATED_BODY`, `UE_LOG`, `DOREPLIFETIME`) and naming patterns (`K2_`, `OnRep_`, `_Implementation`) don't produce warnings.
+- On startup, a warning with a **Regenerate** button when `compile_commands.json` refers to response files that no longer exist (for example after cleaning `Intermediate`). Without them clangd has no include paths or defines and reports many false errors. Runs when `unreal-utils.autoRunOnStartup` is on.
+
+### Changed
+- `modernize-use-override` is replaced by the `-Wsuggest-override` compiler warning. The Epic standard requires both `virtual` and `override`, which `modernize-use-override` reports as redundant.
+- Variables, parameters and members are now checked for PascalCase (previously any case was accepted).
+
+### Fixed
+- False clangd errors such as "definition of builtin function '_m_prefetch'" when the project is built with Clang. UE's Clang compile commands set `-resource-dir` to the compiler's builtin headers (e.g. Visual Studio's Clang 19), which don't match a newer clangd. The `.clangd` template now removes `-resource-dir`, so clangd uses its own headers.
+- The clang-tidy settings in the `.clangd` template were at the top level, where clangd ignores them. They are now under `Diagnostics`, so the configured checks run.
+- A check that doesn't exist (`bugprone-hdr-checker`) in the template's clang-tidy list.
+- When UnrealBuildTool fails without an "error" line (for example "Unable to find plugin ..."), the error message now shows that line instead of no reason.
+
 ## [0.2.2] - 2026-09-28
 
 ### Changed

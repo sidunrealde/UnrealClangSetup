@@ -30,6 +30,7 @@ Before using this extension, please ensure your system meets the following requi
 - **Database in the Project Root**: `compile_commands.json` ends up in your project root, where the `clangd` language server finds it. Newer engines write it there directly; with older engines it is copied from the Engine root folder.
 - **Toolchain Fallback**: UE 5.x generates the database with Clang by default. If Clang isn't installed, the extension automatically uses the Visual Studio toolchain instead (configurable with `unreal-utils.compiler`).
 - **Full Build Output**: UnrealBuildTool's output appears in the **Unreal Clangd Utils** output panel, and error messages show the reason for a failure.
+- **Unreal Coding Standard Linting**: The generated `.clangd` enables clang-tidy checks and compiler warnings that follow the Epic C++ Coding Standard (see [Linting](#linting)).
 - **Conflict Prevention**: Disables Microsoft C/C++ extension's IntelliSense workspace engine (`C_Cpp.intelliSenseEngine = disabled`) to prevent duplicate diagnostics, lag, and resource conflicts.
 - **One-Click UI Controls**:
   - **Status Bar Button**: Displays a `Generate Clang Database` shortcut button at the bottom of the window.
@@ -47,6 +48,31 @@ Before using this extension, please ensure your system meets the following requi
 2. **Updating the Database**:
    - Whenever you add new C++ files, rename modules, or add new plugin dependencies, the compiler paths change.
    - Simply click the **Generate Clang Database** button on the bottom status bar, or click the **Sync Database** icon in the editor toolbar (top-right of C++ files) to regenerate and copy `compile_commands.json`.
+
+---
+
+## Linting
+
+The generated `.clangd` turns on these checks, based on the [Epic C++ Coding Standard](https://dev.epicgames.com/documentation/unreal-engine/epic-cplusplus-coding-standard-for-unreal-engine). They appear as warnings in the editor, most with a quick fix.
+
+| Coding standard rule | Check |
+|---|---|
+| PascalCase names, `E` prefix for enums, `b` prefix for booleans, `UPPER_CASE` macros | `readability-identifier-naming` |
+| Braces even around single-statement blocks | `readability-braces-around-statements` |
+| `nullptr`, never `NULL` | `modernize-use-nullptr` |
+| Const locals; const methods; pass unmodified arguments by const reference; iterate by const reference | `misc-const-correctness`, `readability-make-member-function-const`, `performance-unnecessary-value-param`, `performance-for-range-copy` |
+| Never `const` on a by-value return type | `readability-const-return-type` |
+| `auto*` / `const auto&` when `auto` is used | `readability-qualified-auto` |
+| One variable per declaration | `readability-isolate-declaration` |
+| Every `switch` has a `default` | `bugprone-switch-missing-default-case` |
+| `enum class` instead of plain enums | `cppcoreguidelines-use-enum-class` |
+| `int16`/`int64`/... instead of `short`/`long` | `google-runtime-int` |
+| No `using` declarations at global scope in headers | `google-global-names-in-headers` |
+| C++ casts instead of C-style casts | `google-readability-casting` |
+| Overrides marked `override` (alongside `virtual`) | `-Wsuggest-override` |
+| No shadowed variables | `-Wshadow` |
+
+Unreal's own patterns are allowed: `K2_`, `OnRep_` and `_Implementation`/`_Validate` function names, the code `GENERATED_BODY()`, `UE_LOG` and `DOREPLIFETIME` expand to. Some rules can't be checked automatically (for example "bool variables must start with `b`" is allowed but not enforced, and `auto` restrictions). To change the checks, edit the `Diagnostics: ClangTidy:` section of `.clangd`.
 
 ---
 
@@ -73,6 +99,14 @@ Before using this extension, please ensure your system meets the following requi
 
 ### Issue: Generation failed and the reason isn't clear
 * **Solution**: Click **Show Output** in the error message, or open the **Unreal Clangd Utils** output panel (`View -> Output`), to see UnrealBuildTool's full output.
+
+### Issue: clangd errors like "definition of builtin function '_m_prefetch'" but the project compiles
+* **Cause**: When the project is built with Clang, Unreal's compile commands point clangd at the compiler's own builtin headers (`-resource-dir`, e.g. Visual Studio's Clang 19). A newer clangd doesn't match those headers.
+* **Solution**: Run **Unreal Utils: Write .clangd Config File** (this overwrites `.clangd`), or add `-resource-dir=*` to the `CompileFlags: Remove:` list in your `.clangd`. Then run **clangd: Restart language server**.
+
+### Issue: Many false errors after a clean build, or warning "compile_commands.json is out of date"
+* **Cause**: Each entry in `compile_commands.json` keeps its flags in a response file under `Intermediate/` (`cl.exe @File.cpp.obj.rsp`). If `Intermediate` is cleaned, those files are gone and clangd has no include paths or defines.
+* **Solution**: Click **Regenerate** in the warning, or click **Generate Clang Database** in the status bar.
 
 ### Issue: Duplicate Diagnostics or Slow Editing Performance
 * **Cause**: Microsoft's C/C++ extension IntelliSense is still running.
