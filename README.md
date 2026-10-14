@@ -78,6 +78,10 @@ Before using this extension, please ensure your system meets the following requi
 * **Cause**: When the project is built with Clang, Unreal's compile commands point clangd at the compiler's own builtin headers (`-resource-dir`, e.g. Visual Studio's Clang 19). A newer clangd doesn't match those headers.
 * **Solution**: Run **Unreal Utils: Write .clangd Config File** (this overwrites `.clangd`), or add `-resource-dir=*` to the `CompileFlags: Remove:` list in your `.clangd`. Then run **clangd: Restart language server**.
 
+### Issue: Many false errors after a clean build, or warning "compile_commands.json is out of date"
+* **Cause**: Each entry in `compile_commands.json` keeps its flags in a response file under `Intermediate/` (`cl.exe @File.cpp.obj.rsp`). If `Intermediate` is cleaned, those files are gone and clangd has no include paths or defines.
+* **Solution**: Click **Regenerate** in the warning, or click **Generate Clang Database** in the status bar.
+
 ### Issue: Duplicate Diagnostics or Slow Editing Performance
 * **Cause**: Microsoft's C/C++ extension IntelliSense is still running.
 * **Solution**: Ensure your workspace settings file (`.vscode/settings.json`) contains `"C_Cpp.intelliSenseEngine": "disabled"`. This extension attempts to set this automatically during initial setup.

@@ -51,27 +51,25 @@ Diagnostics:
     no_template
   ]
 
-
-ClangTidy:
-  FastCheckFilter: None                    
-  Add:
-    - misc-const-correctness
-    - readability-const-return-type
-    - readability-braces-around-statements
-    - modernize-use-nullptr
-    - modernize-use-override
-    - google-readability-casting
-    - readability-identifier-naming
-  Remove:
-    - cppcoreguidelines-macro-usage        
-    - bugprone-hdr-checker                 
-
-CheckOptions:
-  misc-const-correctness.AnalyzeValues: "true"
-  misc-const-correctness.AnalyzeReferences: "true"
-  misc-const-correctness.WarnPointersAsValues: "true"
-  readability-identifier-naming.BooleanPrefix: "b"
-  readability-identifier-naming.VariableCase: "aNy_CaSe"
-  readability-identifier-naming.ParameterCase: "aNy_CaSe"
-  readability-identifier-naming.MemberCase: "aNy_CaSe"
+  # clang-tidy settings must be nested under Diagnostics; clangd ignores them at the top level
+  ClangTidy:
+    FastCheckFilter: None
+    Add:
+      - misc-const-correctness
+      - readability-const-return-type
+      - readability-braces-around-statements
+      - modernize-use-nullptr
+      - modernize-use-override
+      - google-readability-casting
+      - readability-identifier-naming
+    Remove:
+      - cppcoreguidelines-macro-usage
+    CheckOptions:
+      misc-const-correctness.AnalyzeValues: "true"
+      misc-const-correctness.AnalyzeReferences: "true"
+      misc-const-correctness.WarnPointersAsValues: "true"
+      readability-identifier-naming.BooleanPrefix: "b"
+      readability-identifier-naming.VariableCase: "aNy_CasE"
+      readability-identifier-naming.ParameterCase: "aNy_CasE"
+      readability-identifier-naming.MemberCase: "aNy_CasE"
 `;

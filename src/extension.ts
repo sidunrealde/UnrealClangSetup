@@ -10,6 +10,7 @@ import {
     disableMsIntelliSense
 } from './utils';
 import { CompilerChoice, generateClangDatabase, summarizeFailure, supportsOutputDir } from './ubt';
+import { findMissingResponseFile } from './compileDatabase';
 
 export async function activate(context: vscode.ExtensionContext) {
     const folders = vscode.workspace.workspaceFolders;
@@ -60,6 +61,19 @@ export async function activate(context: vscode.ExtensionContext) {
                     vscode.commands.executeCommand('unreal-utils.setupProject');
                 }
             });
+        } else {
+            const missing = findMissingResponseFile(compileCommandsPath);
+            if (missing) {
+                getOutputChannel().appendLine(`compile_commands.json refers to a missing response file: ${missing}`);
+                vscode.window.showWarningMessage(
+                    'compile_commands.json is out of date: it refers to build files that no longer exist (for example after cleaning Intermediate), so clangd is missing include paths and defines.',
+                    'Regenerate'
+                ).then(selection => {
+                    if (selection === 'Regenerate') {
+                        vscode.commands.executeCommand('unreal-utils.generateCompileCommands');
+                    }
+                });
+            }
         }
     }
 }

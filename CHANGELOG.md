@@ -8,8 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [0.2.3] - 2026-10-14
 
+Existing projects keep their old `.clangd`: run **Unreal Utils: Write .clangd Config File** to get the template fixes below (this overwrites `.clangd`).
+
+### Added
+- On startup, a warning with a **Regenerate** button when `compile_commands.json` refers to response files that no longer exist (for example after cleaning `Intermediate`). Without them clangd has no include paths or defines and reports many false errors. Runs when `unreal-utils.autoRunOnStartup` is on.
+
 ### Fixed
-- False clangd errors such as "definition of builtin function '_m_prefetch'" when the project is built with Clang. UE's Clang compile commands set `-resource-dir` to the compiler's builtin headers (e.g. Visual Studio's Clang 19), which don't match a newer clangd. The `.clangd` template now removes `-resource-dir`, so clangd uses its own headers. Existing projects: run **Unreal Utils: Write .clangd Config File** to update `.clangd`.
+- False clangd errors such as "definition of builtin function '_m_prefetch'" when the project is built with Clang. UE's Clang compile commands set `-resource-dir` to the compiler's builtin headers (e.g. Visual Studio's Clang 19), which don't match a newer clangd. The `.clangd` template now removes `-resource-dir`, so clangd uses its own headers.
+- The clang-tidy settings in the `.clangd` template were at the top level, where clangd ignores them. They are now under `Diagnostics`, so the configured checks run and show their warnings.
+- Invalid `aNy_CaSe` values for the `readability-identifier-naming` options (now `aNy_CasE`), and a check that doesn't exist (`bugprone-hdr-checker`) in the template's clang-tidy list.
 
 ## [0.2.2] - 2026-09-28
 
