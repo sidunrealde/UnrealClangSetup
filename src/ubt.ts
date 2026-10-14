@@ -42,13 +42,20 @@ export function supportsOutputDir(engineRoot: string): boolean {
     }
 }
 
-/** Most useful line to show when UBT fails, e.g. "Clang x64 must be installed in order to build this target." */
+/**
+ * Most useful line to show when UBT fails, e.g. "Clang x64 must be installed in order to build this target."
+ * Falls back to the last line before UBT's "Result: Failed" summary, e.g. "Unable to find plugin 'X' ...".
+ */
 export function summarizeFailure(output: string): string | undefined {
     const lines = output.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    return (
+    const explicit =
         lines.find(l => CLANG_MISSING.test(l)) ??
-        lines.find(l => /\berror\b|must be installed|exception/i.test(l) && !/^Result:/i.test(l))
-    );
+        lines.find(l => /\berror\b|must be installed|exception/i.test(l) && !/^Result:/i.test(l));
+    if (explicit) {
+        return explicit;
+    }
+    const result = lines.findIndex(l => /^Result:\s*Failed/i.test(l));
+    return result > 0 ? lines[result - 1] : undefined;
 }
 
 /** Runs a process and streams its output. .bat/.cmd files (e.g. Build.bat) need a shell on Windows. */
